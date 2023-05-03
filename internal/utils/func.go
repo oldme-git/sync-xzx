@@ -17,3 +17,7 @@ func GbkToUtf8(s string) (string, error) {
 	}
 	return string(d), nil
 }
+
+func Log(s string) {
+
+}

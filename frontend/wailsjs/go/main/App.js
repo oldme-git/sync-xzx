@@ -5,3 +5,7 @@
 export function Gopher(arg1) {
   return window['go']['main']['App']['Gopher'](arg1);
 }
+
+export function Save() {
+  return window['go']['main']['App']['Save']();
+}

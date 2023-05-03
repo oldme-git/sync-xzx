@@ -1,6 +1,7 @@
 package main
 
 import (
+	"changeme/internal/save"
 	"embed"
 	"fmt"
 	"github.com/wailsapp/wails/v2"
@@ -38,4 +39,12 @@ func main() {
 
 func (a *App) Gopher(s string) string {
 	return fmt.Sprintf("当前时间%s，%s", time.Now().Format("15:04:05"), s)
+}
+
+func (a *App) Save() string {
+	err := save.Save()
+	if err != nil {
+		return err.Error()
+	}
+	return ""
 }

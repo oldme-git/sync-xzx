@@ -3,6 +3,7 @@ module changeme
 go 1.18
 
 require (
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/wailsapp/wails/v2 v2.4.1
 	golang.org/x/text v0.7.0
 )
