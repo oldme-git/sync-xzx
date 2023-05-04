@@ -1,17 +1,27 @@
 package main
 
 import (
-	"changeme/internal/save"
 	"embed"
-	"fmt"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"time"
+	"syscall"
 )
 
-//go:embed all:frontend/dist
-var assets embed.FS
+var (
+	//go:embed all:frontend/dist
+	assets embed.FS
+	// dll地址
+	xzxApi = syscall.NewLazyDLL("AIO_API.dll")
+	// 主机地址
+	ip = "172.20.2.220"
+	// 端口号
+	port = 8500
+	// 系统代码
+	sysCode = 21
+	// 站点号
+	terminalNo = 10
+)
 
 func main() {
 	// Create an instance of the app structure
@@ -20,8 +30,8 @@ func main() {
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "sync-xzx",
-		Width:  1024,
-		Height: 768,
+		Width:  540,
+		Height: 720,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
@@ -35,16 +45,4 @@ func main() {
 	if err != nil {
 		println("Error:", err.Error())
 	}
-}
-
-func (a *App) Gopher(s string) string {
-	return fmt.Sprintf("当前时间%s，%s", time.Now().Format("15:04:05"), s)
-}
-
-func (a *App) Save() string {
-	err := save.Save()
-	if err != nil {
-		return err.Error()
-	}
-	return ""
 }

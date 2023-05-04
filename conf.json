@@ -1,0 +1,1 @@
+"{\"xzx\":{\"ip\":\"172.20.2.220\",\"port\":8500,\"terminal\":21,\"sysCode\":10,\"timeout\":20},\"db\":{\"ip\":\"127.0.0.1\",\"port\":3600,\"dbName\":\"traceint\",\"user\":\"root\",\"pass\":\"123456\"},\"ext\":{\"syncTime\":1800}}"
