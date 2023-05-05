@@ -5,3 +5,11 @@
 export function SaveConf(arg1) {
   return window['go']['main']['App']['SaveConf'](arg1);
 }
+
+export function Sync() {
+  return window['go']['main']['App']['Sync']();
+}
+
+export function XzxConnTest() {
+  return window['go']['main']['App']['XzxConnTest']();
+}

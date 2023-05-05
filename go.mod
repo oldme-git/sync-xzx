@@ -1,4 +1,4 @@
-module changeme
+module sync-xzx
 
 go 1.18
 

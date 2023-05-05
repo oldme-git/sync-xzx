@@ -2,7 +2,7 @@ package conf
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"os"
 )
 
@@ -44,7 +44,7 @@ func (c *Conf) Read(data interface{}) error {
 	}
 	defer file.Close()
 
-	jsonData, err := ioutil.ReadAll(file)
+	jsonData, err := io.ReadAll(file)
 	if err != nil {
 		return err
 	}
@@ -55,4 +55,16 @@ func (c *Conf) Read(data interface{}) error {
 	}
 
 	return nil
+}
+
+// GetDb 获取conf
+// t是配置类型，当前有db,xzx,ext
+func (c *Conf) GetDb(t string) (m map[string]interface{}, err error) {
+	// 读取数据
+	var data map[string]interface{}
+	if err := c.Read(&data); err != nil {
+		return nil, err
+	}
+	m = data[t].(map[string]interface{})
+	return
 }

@@ -23,7 +23,7 @@
                 <label class="input-label">超时时长</label>
             </div>
             <div class="input-group">
-                <button class="input-btn">连接测试</button>
+                <button class="input-btn" @click="xzxConn">连接测试</button>
                 <button class="input-btn" @click="saveConf">保存配置</button>
             </div>
         </div>
@@ -66,7 +66,7 @@
             </div>
             <div class="input-group">
                 <button class="input-btn" @click="saveConf">保存配置</button>
-                <button class="input-btn">立即同步</button>
+                <button class="input-btn" @click="sync">立即同步</button>
                 <button class="input-btn">开启自动同步</button>
                 <button class="input-btn">关闭自动同步</button>
                 <button class="input-btn" @click="cleanLog">清空日志信息</button>
@@ -80,34 +80,49 @@
 </template>
 
 <script setup>
-import {SaveConf} from "../wailsjs/go/main/App.js"
+import {SaveConf as _sc, XzxConnTest as _xct, Sync as _sync} from "../wailsjs/go/main/App.js"
 import {ref} from "vue"
 
 const conf = ref({
     xzx: {
         ip: "172.20.2.220",
-        port: 8500,
-        terminal: 21,
-        sysCode: 10,
-        timeout: 20,
+        port: "8500",
+        terminal: "10",
+        sysCode: "21",
+        timeout: "20",
     },
     db: {
         ip: "127.0.0.1",
-        port: 3600,
+        port: "3600",
         dbName: "traceint",
         user: "root",
         pass: "123456",
     },
     ext: {
-        syncTime: 1800,
+        syncTime: "1800",
     },
 })
 const logList = ref([])
 
+// 保存配置
 function saveConf() {
     const jsonConf = JSON.stringify(conf.value)
     console.log(jsonConf)
-    SaveConf(jsonConf).then((res) => {
+    _sc(jsonConf).then((res) => {
+        logList.value.push(res)
+    })
+}
+
+// 新中新连接测试
+function xzxConn() {
+    _xct().then((res) => {
+        logList.value.push(res)
+    })
+}
+
+// 立即同步
+function sync() {
+    _sync().then((res) => {
         logList.value.push(res)
     })
 }
