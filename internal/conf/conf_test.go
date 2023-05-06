@@ -19,11 +19,17 @@ func TestRead(t *testing.T) {
 	conf := NewConf("data.json")
 
 	// 读取数据
-	var data map[string]string
+	var data map[string]interface{}
 	err := conf.Read(&data)
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Println(data)
+}
+
+func TestGetConf(t *testing.T) {
+	conf := NewConf("data.json")
+	sub, _ := conf.GetConf("ext")
+	fmt.Println(sub["isAutoSync"])
 }

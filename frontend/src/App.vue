@@ -50,7 +50,7 @@
                 <label class="input-label">密码</label>
             </div>
             <div class="input-group">
-                <button class="input-btn">连接测试</button>
+                <button class="input-btn" @click="dbConn">连接测试</button>
                 <button class="input-btn" @click="saveConf">保存配置</button>
             </div>
         </div>
@@ -67,21 +67,31 @@
             <div class="input-group">
                 <button class="input-btn" @click="saveConf">保存配置</button>
                 <button class="input-btn" @click="sync">立即同步</button>
-                <button class="input-btn">开启自动同步</button>
-                <button class="input-btn">关闭自动同步</button>
+                <button class="input-btn" @click="startAutoSync">开启自动同步</button>
+                <button class="input-btn" @click="closeAutoSync">关闭自动同步</button>
                 <button class="input-btn" @click="cleanLog">清空日志信息</button>
             </div>
         </div>
         <div class="card log">
             <h1>日志信息</h1>
             <p v-for="item in logList">{{ item }}</p>
+            <p v-if="progress.show">已经同步 {{ progress.num }} 条数据</p>
         </div>
     </div>
 </template>
 
 <script setup>
-import {SaveConf as _sc, XzxConnTest as _xct, Sync as _sync} from "../wailsjs/go/main/App.js"
-import {ref} from "vue"
+import {
+    SaveConf as _sc,
+    ReadConf as _rf,
+    XzxConnTest as _xct,
+    DbConnTest as _dct,
+    Sync as _sync,
+    StartAutoSync as _sas,
+    CloseAutoSync as _cas
+} from "../wailsjs/go/main/App.js"
+import {onMounted, ref} from "vue"
+import {EventsOn} from "../wailsjs/runtime/runtime.js"
 
 const conf = ref({
     xzx: {
@@ -93,21 +103,53 @@ const conf = ref({
     },
     db: {
         ip: "127.0.0.1",
-        port: "3600",
+        port: "3306",
         dbName: "traceint",
         user: "root",
         pass: "123456",
     },
     ext: {
         syncTime: "1800",
+        isAutoSync: "0"
     },
 })
 const logList = ref([])
+const progress = ref({
+    num: 0,
+    show: false
+})
+
+// 定时清除日志
+setInterval(() => {
+    logList.value = []
+}, 3600 * 1000)
+
+// 立即同步时的进度
+EventsOn("progress", (res) => {
+    progress.value.num = res
+})
+
+// 自动同步时日志
+EventsOn("autoSyncStatus", (res) => {
+    logList.value.push(res)
+})
+
+onMounted(() => {
+    readConf()
+})
+
+// 读取配置
+function readConf() {
+    _rf().then((res) => {
+        try {
+            conf.value = JSON.parse(res)
+        } catch (e) {}
+    })
+}
 
 // 保存配置
 function saveConf() {
     const jsonConf = JSON.stringify(conf.value)
-    console.log(jsonConf)
     _sc(jsonConf).then((res) => {
         logList.value.push(res)
     })
@@ -120,18 +162,41 @@ function xzxConn() {
     })
 }
 
-// 立即同步
-function sync() {
-    _sync().then((res) => {
+// 数据库连接测试
+function dbConn() {
+    _dct().then((res) => {
         logList.value.push(res)
     })
+}
+
+// 立即同步
+function sync() {
+    // 开启进度显示
+    progress.value.show = true
+    progress.value.num = 0
+    _sync().then((res) => {
+        logList.value.push(res)
+        // 关闭进度显示
+        progress.value.show = false
+    })
+}
+
+// 开启自动同步
+function startAutoSync() {
+    conf.value.ext.isAutoSync = "1"
+    _sas()
+}
+
+// 关闭自动同步
+function closeAutoSync() {
+    conf.value.ext.isAutoSync = "0"
+    _cas()
 }
 
 // 清空日志
 function cleanLog() {
     logList.value = []
 }
-
 </script>
 
 <style scoped>
@@ -145,7 +210,7 @@ function cleanLog() {
 .card {
     border: 1px solid #ccc;
     padding: 10px;
-    width: 240px;
+    width: 50%;
     height: 330px;
     box-sizing: border-box;
 }
@@ -169,7 +234,7 @@ function cleanLog() {
 
 .input-group {
     padding-top: 18px;
-    width: 200px;
+    width: 70%;
     position: relative;
     margin-bottom: 4px;
 }
@@ -189,16 +254,11 @@ function cleanLog() {
 
 .input-label {
     position: absolute;
-    top: 5px;
+    top: 0;
+    left: 0;
     font-size: 14px;
     pointer-events: none;
     transition: all 0.3s ease-out;
-}
-
-.input-field:focus ~ .input-label,
-.input-field:not(:placeholder-shown) ~ .input-label {
-    top: 0;
-    font-size: 14px;
     color: #3498db;
 }
 
@@ -219,6 +279,10 @@ function cleanLog() {
 .input-btn:hover {
     background-color: #3498db;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.input-checkbox {
+    margin: 0;
 }
 
 .card p {

@@ -18,7 +18,7 @@ func Init3() (int, error) {
 		init3 = xzxApi.NewProc("TA_Init3")
 		c     = conf.NewConf("conf.json")
 	)
-	xzx, err := c.GetDb("xzx")
+	xzx, err := c.GetConf("xzx")
 	if err != nil {
 		return 0, err
 	}
@@ -47,7 +47,7 @@ func InqAllAcc() (int, int, error) {
 	}
 	var (
 		c        = conf.NewConf("conf.json")
-		xzx, err = c.GetDb("xzx")
+		xzx, err = c.GetConf("xzx")
 	)
 	if err != nil {
 		return 0, 0, err
