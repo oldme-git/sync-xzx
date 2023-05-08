@@ -1,1 +1,1 @@
-{"db":{"dbName":"traceint","ip":"127.0.0.1","pass":"123456","port":"3306","user":"root"},"ext":{"isAutoSync":"0","syncTime":"1800"},"xzx":{"ip":"172.20.2.220","port":"8500","sysCode":"21","terminal":"10","timeout":"20"}}
+{"db":{"dbName":"oldme","ip":"192.168.10.47","pass":"123456","port":"3306","user":"root"},"ext":{"isAutoSync":"0","syncTime":"10"},"xzx":{"ip":"172.20.2.220","port":"8500","sysCode":"21","terminal":"10","timeout":"20"}}

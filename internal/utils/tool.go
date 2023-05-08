@@ -5,8 +5,10 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 	"io"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync-xzx/internal/logger"
 	"time"
 )
 
@@ -37,4 +39,11 @@ func SliceTrim(m []string) {
 	for k, v := range m {
 		m[k] = strings.TrimSpace(v)
 	}
+}
+
+// ErrLog 保存错误信息到日志中
+func ErrLog() {
+	buf := make([]byte, 2048)
+	runtime.Stack(buf, true)
+	logger.NewLogger().Log(string(buf))
 }

@@ -1,19 +1,15 @@
-# README
+# 关于
+本程序是用来将新中新dll的学生信息同步到mysql数据库中
 
-## About
+# 开发环境
+- wails >= 2.4.0
+- node >= 14.18
+- go >= 1.18
 
-This is the official Wails Vue template.
+# 编译与使用
+- 先进入frontend目录执行`npm run build`打包前端程序
+- 执行build.bat
+- 将bin目录拷贝到服务器上执行sync-xzx.exe
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
-
-## Live Development
-
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
-
-## Building
-
-To build a redistributable, production mode package, use `wails build`.
+# icon问题
+- 参考wails手动编译 https://wails.io/zh-Hans/docs/guides/manual-builds

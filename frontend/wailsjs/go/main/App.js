@@ -14,6 +14,10 @@ export function ReadConf() {
   return window['go']['main']['App']['ReadConf']();
 }
 
+export function Save() {
+  return window['go']['main']['App']['Save']();
+}
+
 export function SaveConf(arg1) {
   return window['go']['main']['App']['SaveConf'](arg1);
 }

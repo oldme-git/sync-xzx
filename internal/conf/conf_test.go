@@ -30,6 +30,14 @@ func TestRead(t *testing.T) {
 
 func TestGetConf(t *testing.T) {
 	conf := NewConf("data.json")
-	sub, _ := conf.GetConf("ext")
-	fmt.Println(sub["isAutoSync"])
+	sub, _ := conf.GetConf("db")
+	fmt.Println(sub["dbName"])
+}
+
+func TestSetConf(t *testing.T) {
+	conf := NewConf("data.json")
+	err := conf.SetConf("db", "dbName", "traceint")
+	if err != nil {
+		panic(err)
+	}
 }

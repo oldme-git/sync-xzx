@@ -50,17 +50,16 @@ type row struct {
 
 func New(ctx context.Context) *Data {
 	var data Data
+	// 注入身份信息
 	data.injectPid()
+	// 注入部门信息
 	data.injectDep()
 	data.ctx = ctx
 	return &data
 }
 
-// SaveData 解析出数据并保存数据到库中
-func (d *Data) SaveData() (res int, err error) {
-	// 启用进度通道，对外通知当前进度
-	d.progressChan = make(chan int, 1)
-
+// Save 解析出数据并保存数据到库中
+func (d *Data) Save() (res int, err error) {
 	// 读取目录下的文件
 	s, err := filepath.Glob("./RecvTemp/*")
 	if err != nil {
@@ -102,16 +101,18 @@ func (d *Data) SaveData() (res int, err error) {
 			// 部门处理
 			d.depHandel(line, &lineRow)
 			// 卡状态处理
-			d.pidHandel(line, &lineRow)
+			d.statusHandel(line, &lineRow)
 
 			dataSlice = append(dataSlice, lineRow)
 		}
 	}
+	// 去除掉头
 	if len(dataSlice) > 0 {
 		dataSlice = dataSlice[1:]
 	}
 
-	res, err = d.save(dataSlice)
+	// 入库保存
+	res, err = d.saveDb(dataSlice)
 	if err != nil {
 		return
 	}
@@ -119,7 +120,7 @@ func (d *Data) SaveData() (res int, err error) {
 }
 
 // 保存数据到数据库中
-func (d *Data) save(data []row) (res int, err error) {
+func (d *Data) saveDb(data []row) (res int, err error) {
 	// 打开数据库
 	db, err := Open()
 	defer db.Close()
@@ -164,25 +165,27 @@ func (d *Data) save(data []row) (res int, err error) {
 		return
 	}
 
-	// 保存数据
+	// 预加载SQL语句
 	stmt, err := db.PrepareContext(d.ctx, "INSERT INTO sz_reader(reader_no, reader_name, dp_code, dp_name, reader_type1, reader_type1_code, reader_type2, reader_type2_code, reader_type3, reader_type3_code, reader_dept1, reader_dept1_code, reader_dept2, reader_dept2_code, reader_dept3, reader_dept3_code, register_year, card_no, card_status, expire_date, update_time, old_card_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return
 	}
 	defer stmt.Close()
 
-	// 分割切片，开启协程单条插入数据
 	var (
-		goNum = 10
-		wg    = sync.WaitGroup{}
+		// 启用若干个协程逐条插入数据
+		workNum = 10
+		// 分割切片成workNum块
+		chunkData = chunkSlice(data, workNum)
+		// 监听所有的协程是否完成
+		wg = sync.WaitGroup{}
 		// res锁
 		rw              sync.RWMutex
-		insertData      = chunkSlice(data, goNum)
 		ctxCurr, cancel = context.WithCancel(d.ctx)
 	)
 
-	wg.Add(goNum)
-	for _, chuck := range insertData {
+	wg.Add(workNum)
+	for _, chuck := range chunkData {
 		go func(r []row) {
 			for _, v := range r {
 				_, err = stmt.ExecContext(
@@ -222,30 +225,39 @@ func (d *Data) save(data []row) (res int, err error) {
 			wg.Done()
 		}(chuck)
 	}
-
-	// 向通道中塞入当前进度
+	// 向通道发送当前进度
 	go func(ctx context.Context) {
-		d.progressChan <- res
-		for range time.Tick(500 * time.Millisecond) {
+		for {
 			select {
+			case d.progressChan <- res:
+				// 向通道中发出当前进度
+				time.Sleep(500 * time.Millisecond)
 			case <-ctx.Done():
-				// 关闭进度通道
+				// 主动通知退出，关闭进度通道
 				d.progressChan <- res
 				close(d.progressChan)
 				return
 			default:
-				d.progressChan <- res
+				// 进度通道没有开启，直接退出
+				return
 			}
 		}
 	}(ctxCurr)
 	wg.Wait()
+	// 调用上下文关闭事件
 	cancel()
 	return
 }
 
-// Progress 获取进度通道，注意，一旦saveData操作结束了，此通道会关闭
-func (d *Data) Progress() chan int {
-	return d.progressChan
+// Progress 启用进度通道，对外通知当前进度
+func (d *Data) Progress(f func(ready int)) {
+	d.progressChan = make(chan int, 1)
+	go func() {
+		for ready := range d.progressChan {
+			f(ready)
+		}
+		return
+	}()
 }
 
 // 注入身份
@@ -325,7 +337,7 @@ func (d *Data) depHandel(line []string, lineRow *row) {
 }
 
 // 卡状态处理
-func (d *Data) pidHandel(line []string, lineRow *row) {
+func (d *Data) statusHandel(line []string, lineRow *row) {
 	flag := line[12]
 	if len(flag) > 3 {
 		if flag[1:3] == "00" {

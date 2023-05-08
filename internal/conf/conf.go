@@ -2,7 +2,6 @@ package conf
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 )
@@ -46,9 +45,7 @@ func (c *Conf) Read(data interface{}) error {
 	defer file.Close()
 
 	jsonData, err := io.ReadAll(file)
-	fmt.Println(c.filename)
 
-	fmt.Println(jsonData)
 	if err != nil {
 		return err
 	}
@@ -75,12 +72,19 @@ func (c *Conf) GetConf(t string) (m map[string]interface{}, err error) {
 
 // SetConf 设置某一个conf
 // t是配置类型，当前有db,xzx,ext
-func (c *Conf) SetConf(t string) (m map[string]interface{}, err error) {
+// t2是子配置
+// value是配置值
+func (c *Conf) SetConf(t, t2, value string) (err error) {
 	// 读取数据
 	var data map[string]interface{}
 	if err := c.Read(&data); err != nil {
-		return nil, err
+		return err
 	}
-	m = data[t].(map[string]interface{})
+	m := data[t].(map[string]interface{})
+	m[t2] = value
+	err = c.Write(data)
+	if err != nil {
+		return err
+	}
 	return
 }

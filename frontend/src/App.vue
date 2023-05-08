@@ -57,25 +57,27 @@
         <div class="card">
             <h1>其他信息</h1>
             <p>上次同步时间：</p>
-            <p>2022-02-03 12:00:00</p>
+            <p>{{ syncTime.prev }}</p>
             <p>下次同步时间：</p>
-            <p>2022-02-03 12:00:00</p>
+            <p>{{ syncTime.next }}</p>
+            <p>同步状态：</p>
+            <p>已经同步 {{ progress.num }} 条数据</p>
             <div class="input-group">
-                <input type="text" class="input-field" v-model="conf.ext.syncTime">
+                <input type="text" class="input-field" v-model="conf.ext.syncTime" :readonly="disabledAutoSyncBtn">
                 <label class="input-label">自动同步时间间隔（分）</label>
             </div>
             <div class="input-group">
                 <button class="input-btn" @click="saveConf">保存配置</button>
-                <button class="input-btn" @click="sync">立即同步</button>
-                <button class="input-btn" @click="startAutoSync">开启自动同步</button>
-                <button class="input-btn" @click="closeAutoSync">关闭自动同步</button>
+                <button class="input-btn" @click="sync" :disabled="disabledSyncBtn">立即同步</button>
                 <button class="input-btn" @click="cleanLog">清空日志信息</button>
+                <br>
+                <button class="input-btn" @click="startAutoSync" :disabled="disabledAutoSyncBtn">开启自动同步</button>
+                <button class="input-btn" @click="closeAutoSync" :disabled="!disabledAutoSyncBtn">关闭自动同步</button>
             </div>
         </div>
         <div class="card log">
             <h1>日志信息</h1>
             <p v-for="item in logList">{{ item }}</p>
-            <p v-if="progress.show">已经同步 {{ progress.num }} 条数据</p>
         </div>
     </div>
 </template>
@@ -90,7 +92,7 @@ import {
     StartAutoSync as _sas,
     CloseAutoSync as _cas
 } from "../wailsjs/go/main/App.js"
-import {onMounted, ref} from "vue"
+import {watch, onMounted, ref} from "vue"
 import {EventsOn} from "../wailsjs/runtime/runtime.js"
 
 const conf = ref({
@@ -109,7 +111,7 @@ const conf = ref({
         pass: "123456",
     },
     ext: {
-        syncTime: "1800",
+        syncTime: "180",
         isAutoSync: "0"
     },
 })
@@ -118,20 +120,36 @@ const progress = ref({
     num: 0,
     show: false
 })
+const disabledSyncBtn = ref(false)
+const disabledAutoSyncBtn = ref(false)
+const syncTime = ref({
+    prev: "",
+    next: "",
+})
 
 // 定时清除日志
 setInterval(() => {
     logList.value = []
 }, 3600 * 1000)
 
-// 立即同步时的进度
+// 同步进度
 EventsOn("progress", (res) => {
+    // 开启进度显示
+    progress.value.show = true
+    progress.value.num = 0
     progress.value.num = res
 })
 
 // 自动同步时日志
 EventsOn("autoSyncStatus", (res) => {
-    logList.value.push(res)
+    pushLog(res)
+})
+
+// 记录同步时间
+EventsOn("autoTime", (res) => {
+    try {
+        syncTime.value = JSON.parse(res)
+    } catch (e) {}
 })
 
 onMounted(() => {
@@ -143,6 +161,11 @@ function readConf() {
     _rf().then((res) => {
         try {
             conf.value = JSON.parse(res)
+            // 初始化自动同步
+            if (conf.value.ext.isAutoSync === "1") {
+                startAutoSync()
+                changeAutoSyncBtn()
+            }
         } catch (e) {}
     })
 }
@@ -151,52 +174,77 @@ function readConf() {
 function saveConf() {
     const jsonConf = JSON.stringify(conf.value)
     _sc(jsonConf).then((res) => {
-        logList.value.push(res)
+        pushLog(res)
     })
 }
 
 // 新中新连接测试
 function xzxConn() {
     _xct().then((res) => {
-        logList.value.push(res)
+        pushLog(res)
     })
 }
 
 // 数据库连接测试
 function dbConn() {
     _dct().then((res) => {
-        logList.value.push(res)
+        pushLog(res)
     })
 }
 
 // 立即同步
 function sync() {
-    // 开启进度显示
-    progress.value.show = true
-    progress.value.num = 0
+    // 禁止重复点击
+    disabledSyncBtn.value = true
+
     _sync().then((res) => {
-        logList.value.push(res)
-        // 关闭进度显示
-        progress.value.show = false
+        pushLog(res)
+        // 解除限制
+        disabledSyncBtn.value = false
     })
 }
 
 // 开启自动同步
 function startAutoSync() {
     conf.value.ext.isAutoSync = "1"
-    _sas()
+    _sas().then((res) => {
+        pushLog(res)
+    })
 }
 
 // 关闭自动同步
 function closeAutoSync() {
     conf.value.ext.isAutoSync = "0"
-    _cas()
+    _cas().then((res) => {
+        pushLog(res)
+    })
 }
 
 // 清空日志
 function cleanLog() {
     logList.value = []
 }
+
+// 增加一个日志
+function pushLog(text) {
+    let myDate = new Date()
+    let hours =  String(myDate.getHours()).padStart(2, "0");
+    let minutes = String(myDate.getMinutes()).padStart(2, "0");
+    let seconds = String(myDate.getSeconds()).padStart(2, "0");
+    let now = hours + ":" + minutes + ":" + seconds
+    logList.value.push(now + " " + text)
+}
+
+// 改变自动同步按钮状态
+function changeAutoSyncBtn() {
+    disabledAutoSyncBtn.value = conf.value.ext.isAutoSync === "1";
+}
+
+// 监听自动同步状态
+watch(() => conf.value.ext.isAutoSync, () => {
+    changeAutoSyncBtn()
+}, { deep: true })
+
 </script>
 
 <style scoped>
@@ -211,7 +259,7 @@ function cleanLog() {
     border: 1px solid #ccc;
     padding: 10px;
     width: 50%;
-    height: 330px;
+    height: 320px;
     box-sizing: border-box;
 }
 
@@ -252,6 +300,10 @@ function cleanLog() {
     border: 1px solid #3498db;
 }
 
+.input-field[readonly] {
+    background-color: #eeeeee;
+}
+
 .input-label {
     position: absolute;
     top: 0;
@@ -281,8 +333,9 @@ function cleanLog() {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.input-checkbox {
-    margin: 0;
+.input-btn[disabled] {
+    background-color: #2972a2;
+    box-shadow: none;
 }
 
 .card p {
