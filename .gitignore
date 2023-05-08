@@ -1,8 +1,6 @@
 build/bin
-node_modules
 frontend/dist
 RecvTemp
 .idea
 log
-sync-xzx.exe
 ControlFile
