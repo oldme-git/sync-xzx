@@ -15,4 +15,4 @@
 - 参考wails手动编译 https://wails.io/zh-Hans/docs/guides/manual-builds
 
 # 直接使用
-- bin目录下已经编译好了所有的文件，直接打开sync-xzx.exe使用即可
+- bin目录下已经编译好了所有的文件，直接打开使用即可
